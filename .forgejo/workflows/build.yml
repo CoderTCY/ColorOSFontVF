@@ -1,0 +1,114 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Test & Build APKs
+    runs-on: codeberg-medium
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Cache Gradle and Android SDK
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/android-sdk
+          key: codeberg-android-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            codeberg-android-
+
+      - name: Set up Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/android-sdk}}"
+          mkdir -p "$SDK_ROOT/cmdline-tools"
+
+          if [[ ! -x "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]]; then
+            if ! command -v curl >/dev/null 2>&1 || ! command -v unzip >/dev/null 2>&1; then
+              apt-get update
+              apt-get install -y --no-install-recommends curl unzip ca-certificates
+            fi
+            curl -fsSL -o /tmp/cmdline-tools.zip \
+              "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+            rm -rf "$SDK_ROOT/cmdline-tools/latest" /tmp/cmdline-tools-extract
+            unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools-extract
+            mv /tmp/cmdline-tools-extract/cmdline-tools "$SDK_ROOT/cmdline-tools/latest"
+            rm -rf /tmp/cmdline-tools.zip /tmp/cmdline-tools-extract
+          fi
+
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          set +o pipefail
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null
+          set -o pipefail
+
+          if [[ ! -d "$SDK_ROOT/platforms/android-36" || ! -d "$SDK_ROOT/build-tools/36.0.0" ]]; then
+            "$SDKMANAGER" --sdk_root="$SDK_ROOT" \
+              "platforms;android-36" \
+              "build-tools;36.0.0"
+          fi
+
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+
+      - name: Run unit tests and build APKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew testDebugUnitTest assembleDebug assembleRelease --no-daemon --stacktrace
+
+      - name: Stage build outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          if [[ "${GITHUB_REF_TYPE:-}" == "tag" || "${GITHUB_REF:-}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME}"
+          else
+            VERSION="${GITHUB_SHA::7}"
+          fi
+          cp app/build/outputs/apk/debug/app-debug.apk "dist/ColorOSFontVF-${VERSION}-debug.apk"
+          cp app/build/outputs/apk/release/app-release.apk "dist/ColorOSFontVF-${VERSION}-release.apk"
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
+          ls -lh dist
+
+      - name: Upload APK artifacts
+        uses: https://code.forgejo.org/forgejo/upload-artifact@v4
+        with:
+          name: ColorOSFontVF-apks
+          path: dist
+
+      - name: Publish Codeberg Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: https://code.forgejo.org/actions/forgejo-release@v2.9.1
+        with:
+          direction: upload
+          url: ${{ env.FORGEJO_SERVER_URL }}
+          repo: ${{ github.repository }}
+          tag: ${{ github.ref_name }}
+          title: ${{ github.ref_name }}
+          token: ${{ secrets.FORGEJO_TOKEN || github.token }}
+          release-dir: dist
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          override: true
