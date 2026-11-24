@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ColorOSFontVF</string>
+    <string name="module_description">Upgrades OPlus/ColorOS custom FlipFont loading to native Android FontConfig, unlocking variable font axes (wght/ital/slnt/wdth), full weight/style families, OpenType features, and system weight slider.</string>
+    <string name="title_settings">Module Settings</string>
+    <string name="switch_hide_icon">Hide launcher icon (open via Vector Manager or adb)</string>
+    <string name="toast_icon_hidden">Launcher icon hidden; open via Vector Manager</string>
+    <string name="toast_icon_shown">Launcher icon restored</string>
+    <string name="title_diagnostics">System &amp; Custom Font Diagnostics</string>
+    <string name="title_weight_matrix">Weight &amp; Style Matrix (100–900)</string>
+    <string name="title_variation_playground">Live FontVariationSettings Playground</string>
+    <string name="title_opentype_features">OpenType Feature Settings Preview</string>
+    <string name="title_usage">Setup &amp; Companion Font Naming</string>
+</resources>

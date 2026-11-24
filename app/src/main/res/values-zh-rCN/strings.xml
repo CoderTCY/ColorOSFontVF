@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ColorOSFontVF</string>
+    <string name="module_description">将 ColorOS / OPlus 自定义字体（FlipFont）升级为 Android 原生 FontConfig 注入，完整解锁可变字体轴（wght/ital/slnt/wdth）、全字重族、OpenType 特性与系统字体粗细滑块。</string>
+    <string name="title_settings">模块设置</string>
+    <string name="switch_hide_icon">隐藏桌面图标（通过 Vector 界面或 adb 打开）</string>
+    <string name="toast_icon_hidden">已隐藏桌面图标，可通过 Vector 界面打开</string>
+    <string name="toast_icon_shown">已恢复显示桌面图标</string>
+    <string name="title_diagnostics">系统与自定义字体诊断</string>
+    <string name="title_weight_matrix">字重与样式矩阵（100–900）</string>
+    <string name="title_variation_playground">可变轴实时调节测试（FontVariationSettings）</string>
+    <string name="title_opentype_features">OpenType 排版特性对比预览</string>
+    <string name="title_usage">启用说明与多文件命名规范</string>
+</resources>
