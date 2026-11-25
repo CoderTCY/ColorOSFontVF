@@ -4,3 +4,13 @@ app/build/
 local.properties
 .idea/
 *.iml
+
+# Signing keys & local environment
+keystore/
+*.jks
+*.keystore
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
